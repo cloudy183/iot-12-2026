@@ -1,5 +1,5 @@
 from enum import Enum
-
+#define an enumeration for candy types
 
 class CandyType(Enum):
     BAR = 1
