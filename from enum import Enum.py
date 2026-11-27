@@ -1,5 +1,6 @@
+
 from enum import Enum
-#define an enumeration for candy types
+
 
 class CandyType(Enum):
     BAR = 1
@@ -9,16 +10,23 @@ class CandyType(Enum):
 
 
 class Candy:
-    def __init__(self, name="Без назви", mass=0, amount=0, price=0,
-                 candy_type=CandyType.BAR):
+    def __init__(self, name, mass, amount, price, candy_type):
+        if not isinstance(name, str):
+            raise TypeError("Name must be a string")
+        if not isinstance(mass, (int, float)) or mass <= 0:
+            raise ValueError("Mass must be a positive number")
+        if not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0:
+            raise ValueError("Amount must be a positive integer")
+        if not isinstance(price, (int, float)) or price < 0:
+            raise ValueError("Price must be a non-negative number")
+        if not isinstance(candy_type, CandyType):
+            raise TypeError("Invalid candy type")
+
         self.__name = name
         self.__mass = mass
         self.__amount = amount
         self.__price = price
         self.__type = candy_type
-
-    def __del__(self):
-        print("Цукерку", self.__name, "видалено")
 
     @property
     def name(self):
@@ -42,26 +50,27 @@ class Candy:
 
     def ate(self):
         if self.__mass * self.__amount > 2000:
-            print("You're on a diet!")
-        else:
-            return "What delicious candies!"
+            return "You're on a diet!"
+        return "What delicious candies!"
 
     def show(self):
-        print(self.__name, self.__mass, "г", self.__amount, "шт",
-              self.__price, "грн", self.__type.name)
+        print(
+            self.__name,
+            self.__mass, "г",
+            self.__amount, "шт",
+            self.__price, "грн",
+            self.__type.name
+        )
 
 
 class Dinner:
     def __init__(self, day="Невідомо", time="00:00", candies=None):
         self.__day = day
         self.__time = time
-        if candies is None:
-            self.__candies = []
-        else:
-            self.__candies = candies
+        self.__candies = list(candies) if candies is not None else []
 
-    def __del__(self):
-        print("Вечерю", self.__day, self.__time, "видалено")
+        if not all(isinstance(candy, Candy) for candy in self.__candies):
+            raise TypeError("All elements must be Candy objects")
 
     @property
     def day(self):
@@ -73,7 +82,7 @@ class Dinner:
 
     @property
     def candies(self):
-        return self.__candies
+        return self.__candies.copy()
 
     def show(self):
         print("Вечеря:", self.__day, self.__time)
@@ -84,29 +93,32 @@ class Dinner:
 def get_value(candy, parameter):
     if parameter == "name":
         return candy.name
-    if parameter == "mass":
+    elif parameter == "mass":
         return candy.mass
-    if parameter == "amount":
+    elif parameter == "amount":
         return candy.amount
-    return candy.price
+    elif parameter == "price":
+        return candy.price
+    else:
+        raise ValueError("Unknown sorting parameter")
 
 
 def sort_candies(candies, parameter):
-    for i in range(len(candies)):
-        for j in range(len(candies) - i - 1):
-            current = get_value(candies[j], parameter)
-            following = get_value(candies[j + 1], parameter)
-            if current > following:
-                candies[j], candies[j + 1] = candies[j + 1], candies[j]
+    return sorted(
+        candies,
+        key=lambda candy: get_value(candy, parameter)
+    )
 
 
-def findTheMostExpensiveCandies(candies, name):
-    suitable = []
-    for candy in candies:
-        if name == "" or name.lower() in candy.name.lower():
-            suitable.append(candy)
-    sort_candies(suitable, "price")
+def find_the_most_expensive_candies(candies, name):
+    suitable = [
+        candy for candy in candies
+        if name == "" or name.lower() in candy.name.lower()
+    ]
+
+    suitable = sort_candies(suitable, "price")
     suitable.reverse()
+
     return suitable[:3]
 
 
@@ -115,51 +127,38 @@ def main():
     candy2 = Candy("Ґудзики", 20, 10, 12, CandyType.BUTTON)
     candy3 = Candy("Попкорн", 150, 20, 60, CandyType.POPCORN)
     candy4 = Candy("Жуйка", 15, 4, 25, CandyType.GUM)
+
     candies = [candy1, candy2, candy3, candy4]
 
     print("Усі цукерки:")
     for candy in candies:
         candy.show()
 
-    print()
-    print("Доступ через property:")
+    print("\nДоступ через property:")
     print(candy1.name)
     print(candy1.price)
     print(candy1.type.name)
 
-    print()
-    print("Метод ate:")
+    print("\nМетод ate:")
     print(candy1.ate())
-    candy3.ate()
+    print(candy3.ate())
 
-    print()
-    print("Топ 3 найдорожчих:")
-    for candy in findTheMostExpensiveCandies(candies, ""):
+    print("\nТоп 3 найдорожчих:")
+    for candy in find_the_most_expensive_candies(candies, ""):
         candy.show()
 
-    print()
-    print("Сортування за масою:")
-    sort_candies(candies, "mass")
-    for candy in candies:
+    print("\nСортування за масою:")
+    sorted_candies = sort_candies(candies, "mass")
+    for candy in sorted_candies:
         candy.show()
 
-    print()
+    print("\nВечеря:")
     dinner = Dinner("П'ятниця", "19:00", [candy1, candy2])
     dinner.show()
+
+    print("\nДоступ до властивостей вечері:")
     print(dinner.day, dinner.time)
 
 
 if __name__ == "__main__":
     main()
-
-print()
-print("Вечеря:")
-
-candy1 = Candy("Шоколадка", 100, 5, 35.5, CandyType.BAR)
-candy2 = Candy("Карамелька", 20, 10, 15, CandyType.BUTTON)
-candy3 = Candy("Желейна цукерка", 30, 8, 25, CandyType.GUM)
-
-dinner = Dinner("П'ятниця", "19:00", [candy1, candy2, candy3])
-
-for candy in dinner.candies:
-    print(candy.name)
